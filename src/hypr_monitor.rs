@@ -9,6 +9,7 @@ pub struct HyprMonitor {
     pub name: String,
     pub refresh_rate: f32,
     pub available_modes: Vec<String>,
+    pub focused: bool,
 }
 
 impl HyprMonitor {

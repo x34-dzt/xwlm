@@ -5,6 +5,7 @@ use color_eyre::eyre::Result;
 pub struct Monitor {
     pub name: String,
     pub refresh_rate: String,
+    pub active: bool,
 }
 
 impl Monitor {
@@ -17,6 +18,7 @@ impl Monitor {
                     m.split("@").nth(1).map(|h| Monitor {
                         refresh_rate: h.to_string(),
                         name: monitor.name.clone(),
+                        active: monitor.focused,
                     })
                 })
             })

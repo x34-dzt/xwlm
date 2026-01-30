@@ -11,10 +11,12 @@ use ratatui::layout::Direction;
 use ratatui::layout::Layout;
 use ratatui::style::Color;
 use ratatui::style::Style;
+use ratatui::text::Line;
 use ratatui::widgets::Block;
 use ratatui::widgets::Borders;
 use ratatui::widgets::List;
 use ratatui::widgets::ListItem;
+use ratatui::widgets::Paragraph;
 
 pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let monitors = monitor::Monitor::get_monitors()?;
@@ -27,8 +29,8 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
         if let Event::Key(k) = read()? {
             match k.code {
                 KeyCode::Esc => break,
-                KeyCode::Up => app.next(),
-                KeyCode::Down => app.previous(),
+                KeyCode::Up => app.previous(),
+                KeyCode::Down => app.next(),
                 _ => {}
             }
         }
@@ -41,8 +43,23 @@ fn render(frame: &mut Frame, app: &mut app::App) {
     let items: Vec<ListItem> = app
         .monitors
         .iter()
-        .map(|m| ListItem::new(format!("{} @ {}", m.name, m.refresh_rate)))
+        .enumerate()
+        .map(|(idx, m)| {
+            ListItem::new(format!(
+                "{}. {} @ {}",
+                idx + 1,
+                m.name,
+                m.refresh_rate
+            ))
+        })
         .collect();
+
+    let active_monitor = app.monitors.iter().find(|m| m.active);
+    let active_monitor_text = match active_monitor {
+        Some(m) => format!("• {} @ {}", m.name, m.refresh_rate),
+        None => "none".to_string(),
+    };
+
     let layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![
@@ -63,9 +80,13 @@ fn render(frame: &mut Frame, app: &mut app::App) {
         ])
         .split(layout[1]);
 
-    let active_monitor = Block::default()
-        .borders(Borders::ALL)
-        .title("active monitor");
+    let active_monitor_text_widget =
+        Paragraph::new(Line::from(active_monitor_text)).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("active monitor"),
+        );
+
     let search_monitor = Block::default()
         .borders(Borders::ALL)
         .title("search monitor monitor");
@@ -74,12 +95,12 @@ fn render(frame: &mut Frame, app: &mut app::App) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("monitors list"),
+                .title("available monitors with their refresh rate"),
         )
-        .highlight_symbol(">")
+        .highlight_symbol("> ")
         .highlight_style(Style::default().bg(Color::Blue).fg(Color::Black));
 
-    frame.render_widget(active_monitor, control_layout[1]);
+    frame.render_widget(active_monitor_text_widget, control_layout[1]);
     frame.render_widget(search_monitor, control_layout[2]);
     frame.render_stateful_widget(
         monitor_list,
