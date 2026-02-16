@@ -12,6 +12,7 @@ use ratatui::widgets::{Block, BorderType, Borders, List, ListItem, Paragraph};
 use wlx_monitors::WlMonitorEvent;
 
 use crate::app::{App, Panel, TRANSFORMS, transform_label};
+use crate::compositor::Compositor;
 
 pub fn run(
     mut terminal: DefaultTerminal,
@@ -19,7 +20,9 @@ pub fn run(
     event_rx: Receiver<WlMonitorEvent>,
 ) -> Result<()> {
     loop {
+        let mut had_events = false;
         while let Ok(event) = event_rx.try_recv() {
+            had_events = true;
             match event {
                 WlMonitorEvent::InitialState(ref monitors) => {
                     app.set_monitors(monitors.clone());
@@ -31,9 +34,13 @@ pub fn run(
                     app.remove_monitor(name);
                 }
                 WlMonitorEvent::ActionFailed { action, reason } => {
+                    app.needs_save = false;
                     eprintln!("Action failed ({:?}): {}", action, reason);
                 }
             }
+        }
+        if had_events {
+            app.save_config();
         }
 
         terminal.draw(|f| render(f, app))?;
@@ -73,7 +80,7 @@ fn render(frame: &mut Frame, app: &mut App) {
 
     render_monitor_list(frame, app, panels[0]);
     render_right_panel(frame, app, panels[1]);
-    render_keybindings(frame, main_layout[1]);
+    render_keybindings(frame, main_layout[1], app.compositor);
 }
 
 fn render_monitor_list(frame: &mut Frame, app: &mut App, area: Rect) {
@@ -392,7 +399,7 @@ fn render_transform(
     frame.render_stateful_widget(list, area, &mut app.transform_state);
 }
 
-fn render_keybindings(frame: &mut Frame, area: Rect) {
+fn render_keybindings(frame: &mut Frame, area: Rect, compositor: Compositor) {
     let keys = Line::from(vec![
         Span::styled(" ↑↓ ", Style::default().fg(Color::Cyan)),
         Span::styled("navigate  ", Style::default().fg(Color::DarkGray)),
@@ -405,7 +412,11 @@ fn render_keybindings(frame: &mut Frame, area: Rect) {
         Span::styled("t ", Style::default().fg(Color::Cyan)),
         Span::styled("toggle  ", Style::default().fg(Color::DarkGray)),
         Span::styled("q ", Style::default().fg(Color::Cyan)),
-        Span::styled("quit", Style::default().fg(Color::DarkGray)),
+        Span::styled("quit  ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            format!("[{}]", compositor.label()),
+            Style::default().fg(Color::DarkGray),
+        ),
     ]);
     frame.render_widget(Paragraph::new(keys), area);
 }

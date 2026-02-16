@@ -3,6 +3,8 @@ use std::sync::mpsc::SyncSender;
 use ratatui::widgets::ListState;
 use wlx_monitors::{WlMonitor, WlMonitorAction, WlTransform};
 
+use crate::compositor::Compositor;
+
 pub const TRANSFORMS: [WlTransform; 8] = [
     WlTransform::Normal,
     WlTransform::Rotate90,
@@ -43,10 +45,17 @@ pub struct App {
     pub pending_scale: f64,
     pub panel: Panel,
     pub controller: SyncSender<WlMonitorAction>,
+    pub compositor: Compositor,
+    pub monitor_config_path: String,
+    pub needs_save: bool,
 }
 
 impl App {
-    pub fn new(controller: SyncSender<WlMonitorAction>) -> Self {
+    pub fn new(
+        controller: SyncSender<WlMonitorAction>,
+        compositor: Compositor,
+        monitor_config_path: String,
+    ) -> Self {
         Self {
             monitors: Vec::new(),
             monitor_state: ListState::default(),
@@ -55,6 +64,23 @@ impl App {
             pending_scale: 1.0,
             panel: Panel::Monitors,
             controller,
+            compositor,
+            monitor_config_path,
+            needs_save: false,
+        }
+    }
+
+    pub fn save_config(&mut self) {
+        if !self.needs_save || self.monitor_config_path.is_empty() {
+            return;
+        }
+        self.needs_save = false;
+        if let Err(e) = crate::compositor::save_monitor_config(
+            self.compositor,
+            &self.monitor_config_path,
+            &self.monitors,
+        ) {
+            eprintln!("Failed to save monitor config: {e}");
         }
     }
 
@@ -83,7 +109,7 @@ impl App {
     }
 
     pub fn remove_monitor(&mut self, name: &str) {
-        self.monitors.retain(|m| m.name != name);
+        self.monitors.retain(|m| m.name != name || !m.enabled);
         if let Some(selected) = self.monitor_state.selected()
             && selected >= self.monitors.len()
         {
@@ -206,12 +232,13 @@ impl App {
         };
     }
 
-    pub fn toggle_monitor(&self) {
+    pub fn toggle_monitor(&mut self) {
         if let Some(monitor) = self.selected_monitor() {
             let _ = self.controller.send(WlMonitorAction::Toggle {
                 name: monitor.name.clone(),
                 mode: None,
             });
+            self.needs_save = true;
         }
     }
 
@@ -223,13 +250,14 @@ impl App {
         self.pending_scale = (self.pending_scale - 0.25).max(0.5);
     }
 
-    pub fn apply_action(&self) {
+    pub fn apply_action(&mut self) {
         match self.panel {
             Panel::Modes => self.apply_mode(),
             Panel::Scale => self.apply_scale(),
             Panel::Transform => self.apply_transform(),
-            _ => {}
+            _ => return,
         }
+        self.needs_save = true;
     }
 
     fn apply_mode(&self) {
