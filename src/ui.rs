@@ -16,18 +16,19 @@ use wlx_monitors::WlMonitorEvent;
 use crate::app::{App, Panel, TRANSFORMS, transform_label};
 use crate::compositor::Compositor;
 
-const BG: Color = Color::Black;
-const SURFACE: Color = Color::Rgb(10, 24, 14);
-const TEXT_PRIMARY: Color = Color::Rgb(226, 244, 230);
-const TEXT_MUTED: Color = Color::Rgb(92, 120, 102);
-const ACCENT: Color = Color::Rgb(96, 255, 156);
-const ACCENT_SOFT: Color = Color::Rgb(44, 179, 104);
-const INFO: Color = Color::Rgb(122, 247, 201);
-const WARN: Color = Color::Rgb(255, 209, 92);
-const DANGER: Color = Color::Rgb(255, 94, 114);
+const BG: Color = Color::Rgb(6, 8, 12);
+const SURFACE: Color = Color::Rgb(14, 18, 24);
+const TEXT_PRIMARY: Color = Color::Rgb(224, 230, 240);
+const TEXT_MUTED: Color = Color::Rgb(121, 130, 146);
+const ACCENT: Color = Color::Rgb(73, 223, 143);
+const INFO: Color = Color::Rgb(120, 176, 255);
+const WARN: Color = Color::Rgb(255, 201, 107);
+const DANGER: Color = Color::Rgb(255, 103, 129);
+const BORDER: Color = Color::Rgb(43, 52, 66);
+const HIGHLIGHT_BG: Color = Color::Rgb(30, 37, 48);
 
 fn panel_block(title: &'static str, focused: bool) -> Block<'static> {
-    let border_color = if focused { ACCENT } else { ACCENT_SOFT };
+    let border_color = if focused { ACCENT } else { BORDER };
 
     Block::default()
         .borders(Borders::ALL)
@@ -134,7 +135,7 @@ fn render_monitor_list(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let list = List::new(items).block(block).highlight_style(
         Style::default()
-            .bg(Color::Rgb(22, 46, 28))
+            .bg(HIGHLIGHT_BG)
             .fg(ACCENT)
             .add_modifier(Modifier::BOLD),
     );
@@ -264,7 +265,7 @@ fn render_modes(
 
     let list = List::new(items).block(block).highlight_style(
         Style::default()
-            .bg(Color::Rgb(22, 46, 28))
+            .bg(HIGHLIGHT_BG)
             .fg(ACCENT)
             .add_modifier(Modifier::BOLD),
     );
@@ -373,7 +374,7 @@ fn render_transform(
 
     let list = List::new(items).block(block).highlight_style(
         Style::default()
-            .bg(Color::Rgb(22, 46, 28))
+            .bg(HIGHLIGHT_BG)
             .fg(ACCENT)
             .add_modifier(Modifier::BOLD),
     );
@@ -397,7 +398,7 @@ fn render_keybindings(frame: &mut Frame, area: Rect, compositor: Compositor) {
         Span::styled("quit  ", Style::default().fg(TEXT_MUTED)),
         Span::styled(
             format!("[{}]", compositor.label()),
-            Style::default().fg(ACCENT_SOFT),
+            Style::default().fg(TEXT_MUTED),
         ),
     ]);
     frame.render_widget(
