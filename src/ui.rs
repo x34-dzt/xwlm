@@ -16,16 +16,17 @@ use wlx_monitors::WlMonitorEvent;
 use crate::app::{App, Panel, TRANSFORMS, transform_label};
 use crate::compositor::Compositor;
 
-const BG: Color = Color::Rgb(6, 8, 12);
-const SURFACE: Color = Color::Rgb(14, 18, 24);
+const BG: Color = Color::Rgb(3, 5, 9);
+const SURFACE: Color = Color::Rgb(10, 13, 19);
+const SURFACE_ALT: Color = Color::Rgb(14, 18, 26);
 const TEXT_PRIMARY: Color = Color::Rgb(224, 230, 240);
 const TEXT_MUTED: Color = Color::Rgb(121, 130, 146);
 const ACCENT: Color = Color::Rgb(73, 223, 143);
 const INFO: Color = Color::Rgb(120, 176, 255);
 const WARN: Color = Color::Rgb(255, 201, 107);
 const DANGER: Color = Color::Rgb(255, 103, 129);
-const BORDER: Color = Color::Rgb(43, 52, 66);
-const HIGHLIGHT_BG: Color = Color::Rgb(30, 37, 48);
+const BORDER: Color = Color::Rgb(37, 46, 59);
+const HIGHLIGHT_BG: Color = Color::Rgb(24, 30, 40);
 
 fn panel_block(title: &'static str, focused: bool) -> Block<'static> {
     let border_color = if focused { ACCENT } else { BORDER };
@@ -35,7 +36,10 @@ fn panel_block(title: &'static str, focused: bool) -> Block<'static> {
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(border_color).bg(SURFACE))
         .style(Style::default().bg(SURFACE))
-        .title(format!(" {} ", title))
+        .title(Span::styled(
+            format!(" {} ", title),
+            Style::default().fg(TEXT_MUTED),
+        ))
 }
 
 pub fn run(
@@ -98,17 +102,47 @@ fn render(frame: &mut Frame, app: &mut App) {
 
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(1), Constraint::Length(1)])
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Min(1),
+            Constraint::Length(2),
+        ])
         .split(area);
+
+    render_header(frame, main_layout[0], app.compositor);
 
     let panels = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
-        .split(main_layout[0]);
+        .constraints([Constraint::Percentage(22), Constraint::Percentage(78)])
+        .split(main_layout[1]);
 
     render_monitor_list(frame, app, panels[0]);
     render_right_panel(frame, app, panels[1]);
-    render_keybindings(frame, main_layout[1], app.compositor);
+    render_keybindings(frame, main_layout[2], app.compositor);
+}
+
+fn render_header(frame: &mut Frame, area: Rect, compositor: Compositor) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(BORDER).bg(SURFACE_ALT))
+        .style(Style::default().bg(SURFACE_ALT));
+
+    let line = Line::from(vec![
+        Span::styled(
+            " WLX Monitor Control ",
+            Style::default().fg(TEXT_PRIMARY),
+        ),
+        Span::styled("•", Style::default().fg(TEXT_MUTED)),
+        Span::styled(
+            format!(" {} compositor", compositor.label()),
+            Style::default().fg(INFO),
+        ),
+        Span::styled(" • ", Style::default().fg(TEXT_MUTED)),
+        Span::styled("dark mode", Style::default().fg(ACCENT)),
+    ]);
+
+    frame.render_widget(Paragraph::new(line).block(block), area);
 }
 
 fn render_monitor_list(frame: &mut Frame, app: &mut App, area: Rect) {
@@ -154,22 +188,18 @@ fn render_right_panel(frame: &mut Frame, app: &mut App, area: Rect) {
     let right_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),
-            Constraint::Min(6),
-            Constraint::Length(10),
+            Constraint::Length(4),
+            Constraint::Min(7),
+            Constraint::Length(11),
         ])
         .split(area);
 
-    // Info bar
     render_info_bar(frame, &monitor, right_layout[0]);
-
-    // Modes panel (always in the middle area)
     render_modes(frame, app, &monitor, right_layout[1]);
 
-    // Bottom: Scale + Transform side by side
     let bottom = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+        .constraints([Constraint::Percentage(44), Constraint::Percentage(56)])
         .split(right_layout[2]);
 
     render_scale(frame, app, &monitor, bottom[0]);
@@ -285,7 +315,6 @@ fn render_scale(
     let pending = app.pending_scale;
     let changed = (current - pending).abs() > 0.001;
 
-    // Slider bar
     let bar_width = (area.width as usize).saturating_sub(6);
     let max_scale = 10.0_f64;
     let fill = ((pending / max_scale) * bar_width as f64)
@@ -398,11 +427,14 @@ fn render_keybindings(frame: &mut Frame, area: Rect, compositor: Compositor) {
         Span::styled("quit  ", Style::default().fg(TEXT_MUTED)),
         Span::styled(
             format!("[{}]", compositor.label()),
-            Style::default().fg(TEXT_MUTED),
+            Style::default().fg(ACCENT),
         ),
     ]);
-    frame.render_widget(
-        Paragraph::new(keys).style(Style::default().bg(BG)),
-        area,
-    );
+
+    let block = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::default().fg(BORDER).bg(BG))
+        .style(Style::default().bg(BG));
+
+    frame.render_widget(Paragraph::new(keys).block(block), area);
 }
