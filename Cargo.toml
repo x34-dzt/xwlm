@@ -7,4 +7,7 @@ edition = "2024"
 color-eyre = "0.6.5"
 ratatui = "0.30.0"
 crossterm = "0.29"
+dirs = "6"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
 wlx_monitors = { path = "../wlx_monitors" }
