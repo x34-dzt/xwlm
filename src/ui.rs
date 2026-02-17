@@ -183,11 +183,14 @@ fn render_modes(frame: &mut Frame, app: &mut App, area: Rect) {
         .border_style(Style::default().fg(border_color))
         .title(" Modes ");
 
-    let list = List::new(items).block(block).highlight_style(
-        Style::default()
-            .bg(Color::DarkGray)
-            .add_modifier(Modifier::BOLD),
-    );
+    let list = List::new(items)
+        .block(block)
+        .highlight_symbol(" › ")
+        .highlight_style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        );
 
     frame.render_stateful_widget(list, area, &mut app.mode_state);
 }
@@ -732,11 +735,14 @@ fn render_transform(
         .border_style(Style::default().fg(border_color))
         .title(" Transform ");
 
-    let list = List::new(items).block(block).highlight_style(
-        Style::default()
-            .bg(Color::DarkGray)
-            .add_modifier(Modifier::BOLD),
-    );
+    let list = List::new(items)
+        .block(block)
+        .highlight_symbol(" › ")
+        .highlight_style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        );
 
     frame.render_stateful_widget(list, area, &mut app.transform_state);
 }
@@ -747,7 +753,14 @@ fn render_keybindings(
     compositor: Compositor,
 ) {
     let keys = Line::from(vec![
-        Span::styled(" Tab ", Style::default().fg(Color::Cyan)),
+        Span::styled(
+            " xwlm ",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled("│ ", Style::default().fg(Color::DarkGray)),
+        Span::styled("Tab ", Style::default().fg(Color::Cyan)),
         Span::styled("panel  ", Style::default().fg(Color::DarkGray)),
         Span::styled("↑↓ ", Style::default().fg(Color::Cyan)),
         Span::styled("navigate  ", Style::default().fg(Color::DarkGray)),

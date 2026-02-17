@@ -124,37 +124,61 @@ fn expand_tilde(path: &str) -> String {
     path.to_string()
 }
 
+const LOGO: &[&str] = &[
+    r"░██    ░██ ░██       ░██ ░██         ░███     ░███ ",
+    r" ░██  ░██  ░██       ░██ ░██         ░████   ░████ ",
+    r"  ░██░██   ░██  ░██  ░██ ░██         ░██░██ ░██░██ ",
+    r"   ░███    ░██ ░████ ░██ ░██         ░██ ░████ ░██ ",
+    r"  ░██░██   ░██░██ ░██░██ ░██         ░██  ░██  ░██ ",
+    r" ░██  ░██  ░████   ░████ ░██         ░██       ░██ ",
+    r"░██    ░██ ░███     ░███ ░██████████ ░██       ░██ ",
+    r"                                                   ",
+];
+
 fn render(frame: &mut Frame, state: &SetupState) {
     let [_, center_v, _] = Layout::vertical([
         Constraint::Fill(1),
-        Constraint::Max(9),
+        Constraint::Max(19),
         Constraint::Fill(1),
     ])
     .areas(frame.area());
 
     let [_, center, _] = Layout::horizontal([
         Constraint::Fill(1),
-        Constraint::Max(60),
+        Constraint::Max(90),
         Constraint::Fill(1),
     ])
     .areas(center_v);
 
-    let [title_area, desc_area, input_area, info_area] = Layout::vertical([
-        Constraint::Length(2),
-        Constraint::Length(2),
-        Constraint::Length(3),
-        Constraint::Length(2),
-    ])
-    .areas(center);
+    let [logo_area, title_area, desc_area, input_area, info_area] =
+        Layout::vertical([
+            Constraint::Length(9),
+            Constraint::Length(2),
+            Constraint::Length(2),
+            Constraint::Length(3),
+            Constraint::Length(2),
+        ])
+        .areas(center);
+
+    let logo_lines: Vec<Line> = LOGO
+        .iter()
+        .map(|line| {
+            Line::from(Span::styled(*line, Style::default().fg(Color::Cyan)))
+        })
+        .collect();
+    frame.render_widget(Paragraph::new(logo_lines), logo_area);
 
     let title = Paragraph::new(Line::from(vec![
         Span::styled(
-            "wlx_monitor_tui ",
+            "xwlm ",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("first-time setup", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            "first-time setup let's",
+            Style::default().fg(Color::DarkGray),
+        ),
     ]));
     frame.render_widget(title, title_area);
 
