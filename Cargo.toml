@@ -10,4 +10,4 @@ crossterm = "0.29"
 dirs = "6"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
-wlx_monitors = { path = "../wlx_monitors" }
+wlx_monitors = "0.1.5"
