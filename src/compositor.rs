@@ -105,10 +105,6 @@ fn transform_to_sway(t: WlTransform) -> &'static str {
 fn format_hyprland(monitors: &[WlMonitor]) -> String {
     let mut lines = Vec::new();
     for m in monitors {
-        if !m.enabled {
-            lines.push(format!("monitor = {}, disable", m.name));
-            continue;
-        }
         let (w, h, refresh) = current_mode(m);
         let scale = format_scale(m.scale);
         let base = format!(
@@ -123,6 +119,9 @@ fn format_hyprland(monitors: &[WlMonitor]) -> String {
             ));
         } else {
             lines.push(base);
+        }
+        if !m.enabled {
+            lines.push(format!("monitor = {}, disable", m.name));
         }
     }
     lines.push(String::new());
