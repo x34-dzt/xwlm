@@ -9,7 +9,7 @@ use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{
-    Block, BorderType, Borders, List, ListItem, Paragraph,
+    Block, BorderType, Borders, Clear, List, ListItem, Paragraph,
 };
 use wlx_monitors::{WlMonitorEvent, WlTransform};
 
@@ -53,33 +53,42 @@ pub fn run(
         if event::poll(Duration::from_millis(50))?
             && let Event::Key(k) = event::read()?
         {
-            match k.code {
-                KeyCode::Char('q') | KeyCode::Esc => break,
-                KeyCode::Up | KeyCode::Char('k') => app.previous(),
-                KeyCode::Down | KeyCode::Char('j') => app.next(),
-                KeyCode::Left | KeyCode::Char('h') => app.nav_left(),
-                KeyCode::Right | KeyCode::Char('l') => app.nav_right(),
-                KeyCode::Tab => app.toggle_panel(),
-                KeyCode::Char('t') => app.toggle_monitor(),
-                KeyCode::Char('r') => app.reset_positions(),
-                KeyCode::Char(']') => app.select_next_monitor(),
-                KeyCode::Char('[') => app.select_prev_monitor(),
-                KeyCode::Char('+') | KeyCode::Char('=') => {
-                    if app.panel == Panel::Map {
-                        app.zoom_in();
-                    } else {
-                        app.scale_up();
+            if app.pending_toggle_warning {
+                match k.code {
+                    KeyCode::Char('y') => {
+                        app.toggle_monitor();
                     }
+                    _ => app.dismiss_warning(),
                 }
-                KeyCode::Char('-') => {
-                    if app.panel == Panel::Map {
-                        app.zoom_out();
-                    } else {
-                        app.scale_down();
+            } else {
+                match k.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break,
+                    KeyCode::Up | KeyCode::Char('k') => app.previous(),
+                    KeyCode::Down | KeyCode::Char('j') => app.next(),
+                    KeyCode::Left | KeyCode::Char('h') => app.nav_left(),
+                    KeyCode::Right | KeyCode::Char('l') => app.nav_right(),
+                    KeyCode::Tab => app.toggle_panel(),
+                    KeyCode::Char('t') => app.toggle_monitor(),
+                    KeyCode::Char('r') => app.reset_positions(),
+                    KeyCode::Char(']') => app.select_next_monitor(),
+                    KeyCode::Char('[') => app.select_prev_monitor(),
+                    KeyCode::Char('+') | KeyCode::Char('=') => {
+                        if app.panel == Panel::Map {
+                            app.zoom_in();
+                        } else {
+                            app.scale_up();
+                        }
                     }
+                    KeyCode::Char('-') => {
+                        if app.panel == Panel::Map {
+                            app.zoom_out();
+                        } else {
+                            app.scale_down();
+                        }
+                    }
+                    KeyCode::Enter => app.apply_action(),
+                    _ => {}
                 }
-                KeyCode::Enter => app.apply_action(),
-                _ => {}
             }
         }
     }
@@ -107,6 +116,114 @@ fn render(frame: &mut Frame, app: &mut App) {
     render_left_panel(frame, app, content[0]);
     render_modes(frame, app, content[1]);
     render_keybindings(frame, main_layout[1], app.compositor);
+
+    if app.pending_toggle_warning {
+        render_warning_modal(frame, area, &app.monitor_config_path);
+    }
+}
+
+fn render_warning_modal(frame: &mut Frame, area: Rect, config_path: &str) {
+    let path_w = config_path.len() as u16 + 14;
+    let modal_w = path_w.max(48).min(area.width.saturating_sub(4));
+    let modal_h = 15u16.min(area.height.saturating_sub(2));
+    let x = (area.width.saturating_sub(modal_w)) / 2;
+    let y = (area.height.saturating_sub(modal_h)) / 2;
+    let modal_area = Rect::new(x, y, modal_w, modal_h);
+
+    frame.render_widget(Clear, modal_area);
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(Color::Red))
+        .title(" Warning ");
+
+    let inner = block.inner(modal_area);
+    frame.render_widget(block, modal_area);
+
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(1), Constraint::Length(3)])
+        .split(inner);
+
+    let text = vec![
+        Line::from(vec![
+            Span::styled(
+                " ⚠ Disable your last monitor?",
+                Style::default()
+                    .fg(Color::Red)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                " No way to undo from here.",
+                Style::default().fg(Color::Yellow),
+            ),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                " To recover, you'll need to:",
+                Style::default().fg(Color::White),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                " 1. Reboot your machine",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                " 2. Open a TTY session",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(" 3. Edit ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                config_path,
+                Style::default().fg(Color::Cyan),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                "    and remove the disable line",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                " 4. Reboot and log into your compositor",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ]),
+    ];
+
+    let buttons = vec![
+        Line::from(vec![
+            Span::styled(" ┌───────┐ ", Style::default().fg(Color::Red)),
+            Span::styled("┌──────┐", Style::default().fg(Color::Green)),
+        ]),
+        Line::from(vec![
+            Span::styled(" │ ", Style::default().fg(Color::Red)),
+            Span::styled("[Y]", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled("es ", Style::default().fg(Color::Red)),
+            Span::styled("│ ", Style::default().fg(Color::Red)),
+            Span::styled("│ ", Style::default().fg(Color::Green)),
+            Span::styled("[N]", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled("o ", Style::default().fg(Color::Green)),
+            Span::styled("│", Style::default().fg(Color::Green)),
+        ]),
+        Line::from(vec![
+            Span::styled(" └───────┘ ", Style::default().fg(Color::Red)),
+            Span::styled("└──────┘", Style::default().fg(Color::Green)),
+        ]),
+    ];
+
+    frame.render_widget(Paragraph::new(text), layout[0]);
+    frame.render_widget(Paragraph::new(buttons), layout[1]);
 }
 
 fn render_left_panel(frame: &mut Frame, app: &mut App, area: Rect) {
