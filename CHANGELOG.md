@@ -2,14 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.3] - 2026-02-18
+## [0.1.4] - 2026-02-18
 
 ### Added
 - Workspace panel for assigning workspaces to monitors
 - Workspace config parsing, formatting, and compositor reload on save
-- Warning modal before disabling the last enabled monitor
 - Contextual keybinding hints in panel titles when focused
-- Curl install script and GitHub Pages deployment
+- Compositor support table and `wlx_monitors` library reference in README
 
 ### Changed
 - Scale step size reduced from 0.25 to 0.1 for finer granularity
@@ -19,6 +18,12 @@ All notable changes to this project will be documented in this file.
 - Workspace changes now save immediately instead of on next event loop
 - River config now generates valid `wlr-randr` commands instead of nonexistent `riverctl` commands
 - River config now includes monitor positions and disabled monitors
+
+## [0.1.3] - 2026-02-18
+
+### Added
+- Warning modal before disabling the last enabled monitor
+- Curl install script and GitHub Pages deployment
 
 ## [0.1.2] - 2026-02-18
 
