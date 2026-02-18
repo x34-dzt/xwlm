@@ -41,8 +41,12 @@ fn main() -> Result<()> {
         state.run(event_queue).expect("Event loop error");
     });
 
-    let mut app =
-        app::App::new(controller, compositor, app_config.monitor_config_path);
+    let mut app = app::App::new(
+        controller,
+        compositor,
+        app_config.monitor_config_path,
+        app_config.workspace_count,
+    );
     let terminal = ratatui::init();
     let result = ui::run(terminal, &mut app, event_receiver);
     ratatui::restore();
