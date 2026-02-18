@@ -104,17 +104,19 @@ fn render(frame: &mut Frame, app: &mut App) {
         .constraints([Constraint::Min(1), Constraint::Length(1)])
         .split(area);
 
-    // Content: left area + modes sidebar
+    // Content: left area + Modes + Workspaces
     let content = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(80),
+            Constraint::Percentage(60),
+            Constraint::Percentage(20),
             Constraint::Percentage(20),
         ])
         .split(main_layout[0]);
 
     render_left_panel(frame, app, content[0]);
     render_modes(frame, app, content[1]);
+    render_workspaces(frame, app, content[2]);
     render_keybindings(frame, main_layout[1], app.compositor);
 
     if app.pending_toggle_warning {
@@ -310,6 +312,79 @@ fn render_modes(frame: &mut Frame, app: &mut App, area: Rect) {
         );
 
     frame.render_stateful_widget(list, area, &mut app.mode_state);
+}
+
+fn render_workspaces(frame: &mut Frame, app: &mut App, area: Rect) {
+    let focused = app.panel == Panel::Workspaces;
+    let border_color = if focused {
+        Color::Blue
+    } else {
+        Color::DarkGray
+    };
+
+    let items: Vec<ListItem> = app
+        .workspace_assignments
+        .iter()
+        .map(|ws| {
+            let monitor_name = ws
+                .monitor_idx
+                .and_then(|idx| app.monitors.get(idx))
+                .map(|m| m.name.as_str())
+                .unwrap_or("unassigned");
+
+            let is_assigned = ws.monitor_idx.is_some();
+            let name_style = if is_assigned {
+                Style::default().fg(Color::Cyan)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+
+            Line::from(vec![
+                Span::styled(
+                    format!("  WS {} ", ws.id),
+                    Style::default().fg(Color::White),
+                ),
+                Span::styled(
+                    "\u{2192} ",
+                    Style::default().fg(Color::DarkGray),
+                ),
+                Span::styled(monitor_name, name_style),
+            ])
+            .into()
+        })
+        .collect();
+
+    let title = if focused {
+        Line::from(vec![
+            Span::styled(" Workspaces ", Style::default().fg(Color::Blue)),
+            Span::styled(
+                "\u{2190}\u{2192} assign ",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ])
+    } else {
+        Line::from(Span::styled(
+            " Workspaces ",
+            Style::default().fg(Color::DarkGray),
+        ))
+    };
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(border_color))
+        .title(title);
+
+    let list = List::new(items)
+        .block(block)
+        .highlight_symbol(" \u{203a} ")
+        .highlight_style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        );
+
+    frame.render_stateful_widget(list, area, &mut app.workspace_state);
 }
 
 fn render_map(frame: &mut Frame, app: &App, area: Rect) {
@@ -631,21 +706,23 @@ fn build_layout_map<'a>(
         grid[y2 - 1][x2 - 1] = (br, border_fg, false);
 
         // Horizontal edges
-        for x in (x1 + 1)..(x2 - 1) {
-            grid[y1][x] = (hc, border_fg, false);
-            grid[y2 - 1][x] = (hc, border_fg, false);
+        for cell in grid[y1][(x1 + 1)..(x2 - 1)].iter_mut() {
+            *cell = (hc, border_fg, false);
+        }
+        for cell in grid[y2 - 1][(x1 + 1)..(x2 - 1)].iter_mut() {
+            *cell = (hc, border_fg, false);
         }
 
         // Vertical edges
-        for y in (y1 + 1)..(y2 - 1) {
-            grid[y][x1] = (vc, border_fg, false);
-            grid[y][x2 - 1] = (vc, border_fg, false);
+        for row in grid[(y1 + 1)..(y2 - 1)].iter_mut() {
+            row[x1] = (vc, border_fg, false);
+            row[x2 - 1] = (vc, border_fg, false);
         }
 
         // Fill interior
-        for y in (y1 + 1)..(y2 - 1) {
-            for x in (x1 + 1)..(x2 - 1) {
-                grid[y][x] = (' ', text_fg, false);
+        for row in grid[(y1 + 1)..(y2 - 1)].iter_mut() {
+            for cell in row[(x1 + 1)..(x2 - 1)].iter_mut() {
+                *cell = (' ', text_fg, false);
             }
         }
 

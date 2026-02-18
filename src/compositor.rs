@@ -1,5 +1,6 @@
 use std::env;
 use std::io;
+use std::process::Command;
 
 use wlx_monitors::{WlMonitor, WlTransform};
 
@@ -45,14 +46,68 @@ pub fn detect() -> Compositor {
     Compositor::Unknown
 }
 
+pub fn parse_workspace_config(
+    compositor: Compositor,
+    path: &str,
+) -> Vec<(usize, String)> {
+    let content = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+    match compositor {
+        Compositor::Hyprland => parse_hyprland_workspaces(&content),
+        Compositor::Sway => parse_sway_workspaces(&content),
+        _ => Vec::new(),
+    }
+}
+
+fn parse_hyprland_workspaces(content: &str) -> Vec<(usize, String)> {
+    content
+        .lines()
+        .filter_map(|line| {
+            let rest = line.trim().strip_prefix("workspace")?.trim_start();
+            let rest = rest.strip_prefix('=')?.trim_start();
+            let (id_str, rest) = rest.split_once(',')?;
+            let id: usize = id_str.trim().parse().ok()?;
+            let monitor = rest.trim().strip_prefix("monitor:")?;
+            Some((id, monitor.trim().to_string()))
+        })
+        .collect()
+}
+
+fn parse_sway_workspaces(content: &str) -> Vec<(usize, String)> {
+    content
+        .lines()
+        .filter_map(|line| {
+            let rest = line.trim().strip_prefix("workspace")?.trim_start();
+            let (id_str, rest) = rest.split_once(char::is_whitespace)?;
+            let id: usize = id_str.trim().parse().ok()?;
+            let monitor = rest.trim().strip_prefix("output")?.trim_start();
+            Some((id, monitor.to_string()))
+        })
+        .collect()
+}
+
+pub fn reload(compositor: Compositor) {
+    let result = match compositor {
+        Compositor::Hyprland => Command::new("hyprctl").arg("reload").output(),
+        Compositor::Sway => Command::new("swaymsg").arg("reload").output(),
+        _ => return,
+    };
+    if let Err(e) = result {
+        eprintln!("Failed to reload compositor: {e}");
+    }
+}
+
 pub fn save_monitor_config(
     compositor: Compositor,
     path: &str,
     monitors: &[WlMonitor],
+    workspaces: &[(usize, Option<String>)],
 ) -> io::Result<()> {
     let content = match compositor {
-        Compositor::Hyprland => format_hyprland(monitors),
-        Compositor::Sway => format_sway(monitors),
+        Compositor::Hyprland => format_hyprland(monitors, workspaces),
+        Compositor::Sway => format_sway(monitors, workspaces),
         Compositor::River => format_river(monitors),
         Compositor::Unknown => return Ok(()),
     };
@@ -102,7 +157,10 @@ fn transform_to_sway(t: WlTransform) -> &'static str {
     }
 }
 
-fn format_hyprland(monitors: &[WlMonitor]) -> String {
+fn format_hyprland(
+    monitors: &[WlMonitor],
+    workspaces: &[(usize, Option<String>)],
+) -> String {
     let mut lines = Vec::new();
     for m in monitors {
         let (w, h, refresh) = current_mode(m);
@@ -124,11 +182,27 @@ fn format_hyprland(monitors: &[WlMonitor]) -> String {
             lines.push(format!("monitor = {}, disable", m.name));
         }
     }
+
+    let ws_lines: Vec<String> = workspaces
+        .iter()
+        .filter_map(|(id, name)| {
+            name.as_ref()
+                .map(|n| format!("workspace = {}, monitor:{}", id, n))
+        })
+        .collect();
+    if !ws_lines.is_empty() {
+        lines.push(String::new());
+        lines.extend(ws_lines);
+    }
+
     lines.push(String::new());
     lines.join("\n")
 }
 
-fn format_sway(monitors: &[WlMonitor]) -> String {
+fn format_sway(
+    monitors: &[WlMonitor],
+    workspaces: &[(usize, Option<String>)],
+) -> String {
     let mut blocks = Vec::new();
     for m in monitors {
         if !m.enabled {
@@ -145,6 +219,18 @@ fn format_sway(monitors: &[WlMonitor]) -> String {
             scale, transform,
         ));
     }
+
+    let ws_lines: Vec<String> = workspaces
+        .iter()
+        .filter_map(|(id, name)| {
+            name.as_ref()
+                .map(|n| format!("workspace {} output {}", id, n))
+        })
+        .collect();
+    if !ws_lines.is_empty() {
+        blocks.push(ws_lines.join("\n"));
+    }
+
     blocks.push(String::new());
     blocks.join("\n\n")
 }

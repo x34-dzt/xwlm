@@ -39,6 +39,12 @@ pub enum PositionDirection {
     Down,
 }
 
+#[derive(Clone, Debug)]
+pub struct WorkspaceAssignment {
+    pub id: usize,
+    pub monitor_idx: Option<usize>,
+}
+
 pub fn monitor_resolution(monitor: &WlMonitor) -> (i32, i32) {
     if let Some(mode) = monitor.modes.iter().find(|m| m.is_current) {
         return (mode.resolution.width, mode.resolution.height);
@@ -69,9 +75,9 @@ pub enum Panel {
     Map,
     Scale,
     Transform,
+    Workspaces,
 }
 
-/// How long between key presses counts as "holding" (ms).
 const REPEAT_WINDOW_MS: u128 = 200;
 
 pub struct App {
@@ -88,6 +94,9 @@ pub struct App {
     pub monitor_config_path: String,
     pub needs_save: bool,
     pub pending_toggle_warning: bool,
+    pub workspace_assignments: Vec<WorkspaceAssignment>,
+    pub workspace_state: ListState,
+    initial_workspace_names: Option<Vec<(usize, String)>>,
     last_move_time: Instant,
     last_move_direction: Option<PositionDirection>,
     move_repeat_count: u32,
@@ -98,7 +107,21 @@ impl App {
         controller: SyncSender<WlMonitorAction>,
         compositor: Compositor,
         monitor_config_path: String,
+        workspace_count: usize,
     ) -> Self {
+        let initial_workspace_names =
+            Some(crate::compositor::parse_workspace_config(
+                compositor,
+                &monitor_config_path,
+            ));
+
+        let workspace_assignments = (1..=workspace_count)
+            .map(|id| WorkspaceAssignment {
+                id,
+                monitor_idx: None,
+            })
+            .collect();
+
         Self {
             monitors: Vec::new(),
             selected_monitor: 0,
@@ -113,6 +136,9 @@ impl App {
             monitor_config_path,
             needs_save: false,
             pending_toggle_warning: false,
+            workspace_assignments,
+            workspace_state: ListState::default().with_selected(Some(0)),
+            initial_workspace_names,
             last_move_time: Instant::now(),
             last_move_direction: None,
             move_repeat_count: 0,
@@ -124,12 +150,26 @@ impl App {
             return;
         }
         self.needs_save = false;
+        let workspaces: Vec<(usize, Option<String>)> = self
+            .workspace_assignments
+            .iter()
+            .map(|ws| {
+                let name = ws
+                    .monitor_idx
+                    .and_then(|idx| self.monitors.get(idx))
+                    .map(|m| m.name.clone());
+                (ws.id, name)
+            })
+            .collect();
         if let Err(e) = crate::compositor::save_monitor_config(
             self.compositor,
             &self.monitor_config_path,
             &self.monitors,
+            &workspaces,
         ) {
             eprintln!("Failed to save monitor config: {e}");
+        } else {
+            crate::compositor::reload(self.compositor);
         }
     }
 
@@ -144,6 +184,25 @@ impl App {
             self.mode_state.select(Some(0));
             self.sync_panel_state();
         }
+        self.resolve_initial_workspaces();
+        self.validate_workspace_assignments();
+    }
+
+    fn resolve_initial_workspaces(&mut self) {
+        let Some(names) = self.initial_workspace_names.take() else {
+            return;
+        };
+        for (ws_id, monitor_name) in &names {
+            let monitor_idx =
+                self.monitors.iter().position(|m| m.name == *monitor_name);
+            if let Some(ws) = self
+                .workspace_assignments
+                .iter_mut()
+                .find(|ws| ws.id == *ws_id)
+            {
+                ws.monitor_idx = monitor_idx;
+            }
+        }
     }
 
     pub fn update_monitor(&mut self, monitor: WlMonitor) {
@@ -155,6 +214,7 @@ impl App {
             self.monitors.push(monitor);
         }
         self.sync_panel_state();
+        self.validate_workspace_assignments();
     }
 
     pub fn remove_monitor(&mut self, name: &str) {
@@ -163,6 +223,7 @@ impl App {
             self.selected_monitor = self.monitors.len().saturating_sub(1);
         }
         self.sync_panel_state();
+        self.validate_workspace_assignments();
     }
 
     fn sync_panel_state(&mut self) {
@@ -236,6 +297,18 @@ impl App {
                     .unwrap_or(0);
                 self.transform_state.select(Some(i));
             }
+            Panel::Workspaces => {
+                let len = self.workspace_assignments.len();
+                if len == 0 {
+                    return;
+                }
+                let i = self
+                    .workspace_state
+                    .selected()
+                    .map(|i| (i + 1) % len)
+                    .unwrap_or(0);
+                self.workspace_state.select(Some(i));
+            }
         }
     }
 
@@ -269,6 +342,18 @@ impl App {
                     .unwrap_or(0);
                 self.transform_state.select(Some(i));
             }
+            Panel::Workspaces => {
+                let len = self.workspace_assignments.len();
+                if len == 0 {
+                    return;
+                }
+                let i = self
+                    .workspace_state
+                    .selected()
+                    .map(|i| if i == 0 { len - 1 } else { i - 1 })
+                    .unwrap_or(0);
+                self.workspace_state.select(Some(i));
+            }
         }
     }
 
@@ -276,6 +361,7 @@ impl App {
         match self.panel {
             Panel::Map => self.move_monitor(PositionDirection::Left),
             Panel::Scale => self.scale_down(),
+            Panel::Workspaces => self.cycle_workspace_monitor(false),
             _ => {}
         }
     }
@@ -284,6 +370,7 @@ impl App {
         match self.panel {
             Panel::Map => self.move_monitor(PositionDirection::Right),
             Panel::Scale => self.scale_up(),
+            Panel::Workspaces => self.cycle_workspace_monitor(true),
             _ => {}
         }
     }
@@ -291,7 +378,8 @@ impl App {
     pub fn toggle_panel(&mut self) {
         self.panel = match self.panel {
             Panel::Map => Panel::Modes,
-            Panel::Modes => Panel::Scale,
+            Panel::Modes => Panel::Workspaces,
+            Panel::Workspaces => Panel::Scale,
             Panel::Scale => Panel::Transform,
             Panel::Transform => Panel::Map,
         };
@@ -361,7 +449,9 @@ impl App {
         let same_direction = self
             .last_move_direction
             .as_ref()
-            .map(|d| std::mem::discriminant(d) == std::mem::discriminant(&direction))
+            .map(|d| {
+                std::mem::discriminant(d) == std::mem::discriminant(&direction)
+            })
             .unwrap_or(false);
 
         if elapsed < REPEAT_WINDOW_MS && same_direction {
@@ -465,6 +555,10 @@ impl App {
                 self.apply_positions();
                 self.pending_positions.clear();
             }
+            Panel::Workspaces => {
+                self.cycle_workspace_monitor(true);
+                return;
+            }
         }
         self.needs_save = true;
     }
@@ -515,5 +609,67 @@ impl App {
 
     pub fn reset_positions(&mut self) {
         self.pending_positions.clear();
+    }
+
+    pub fn cycle_workspace_monitor(&mut self, forward: bool) {
+        let Some(ws_idx) = self.workspace_state.selected() else {
+            return;
+        };
+        let Some(ws) = self.workspace_assignments.get_mut(ws_idx) else {
+            return;
+        };
+
+        let enabled: Vec<usize> = self
+            .monitors
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| m.enabled)
+            .map(|(i, _)| i)
+            .collect();
+        if enabled.is_empty() {
+            return;
+        }
+
+        ws.monitor_idx = match ws.monitor_idx {
+            None => {
+                if forward {
+                    Some(enabled[0])
+                } else {
+                    Some(enabled[enabled.len() - 1])
+                }
+            }
+            Some(idx) => {
+                let pos = enabled.iter().position(|&i| i == idx);
+                match pos {
+                    Some(p) => {
+                        if forward {
+                            if p + 1 >= enabled.len() {
+                                None
+                            } else {
+                                Some(enabled[p + 1])
+                            }
+                        } else if p == 0 {
+                            None
+                        } else {
+                            Some(enabled[p - 1])
+                        }
+                    }
+                    None => None,
+                }
+            }
+        };
+        self.needs_save = true;
+        self.save_config();
+    }
+
+    fn validate_workspace_assignments(&mut self) {
+        let mon_count = self.monitors.len();
+        for ws in &mut self.workspace_assignments {
+            if let Some(idx) = ws.monitor_idx
+                && idx >= mon_count
+            {
+                ws.monitor_idx = None;
+            }
+        }
     }
 }

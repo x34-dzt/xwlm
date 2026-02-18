@@ -107,6 +107,7 @@ pub fn run(
                     let expanded = expand_tilde(path);
                     return Ok(Some(AppConfig {
                         monitor_config_path: expanded,
+                        workspace_count: 10,
                     }));
                 }
                 _ => {}

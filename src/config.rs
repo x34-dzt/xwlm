@@ -4,9 +4,15 @@ use std::path::PathBuf;
 use color_eyre::eyre::{Result, WrapErr};
 use serde::{Deserialize, Serialize};
 
+fn default_workspace_count() -> usize {
+    10
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppConfig {
     pub monitor_config_path: String,
+    #[serde(default = "default_workspace_count")]
+    pub workspace_count: usize,
 }
 
 pub fn config_path() -> Result<PathBuf> {
