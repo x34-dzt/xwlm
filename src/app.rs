@@ -659,6 +659,7 @@ impl App {
             }
         };
         self.needs_save = true;
+        self.save_config();
     }
 
     fn validate_workspace_assignments(&mut self) {

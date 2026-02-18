@@ -44,7 +44,7 @@ pub fn run(
                 }
             }
         }
-        if had_events || app.needs_save {
+        if had_events {
             app.save_config();
         }
 
