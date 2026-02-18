@@ -1,6 +1,6 @@
 [package]
 name = "xwlm"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "A TUI for managing Wayland monitor configurations (Hyprland, Sway, River)"
 license = "MIT"
@@ -14,5 +14,5 @@ ratatui = "0.30.0"
 crossterm = "0.29"
 dirs = "6"
 serde = { version = "1", features = ["derive"] }
-toml = "0.8"
+toml = "1.0.2"
 wlx_monitors = "0.1.5"

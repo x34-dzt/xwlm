@@ -15,7 +15,7 @@ No more hand-editing `monitors.conf`.
 **From source:**
 ```sh
 git clone https://github.com/x34-dzt/xwlm.git
-cd wlx_monitor_tui
+cd xwlm
 cargo build --release
 # binary is at target/release/xwlm
 ```
