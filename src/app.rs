@@ -87,6 +87,7 @@ pub struct App {
     pub compositor: Compositor,
     pub monitor_config_path: String,
     pub needs_save: bool,
+    pub pending_toggle_warning: bool,
     last_move_time: Instant,
     last_move_direction: Option<PositionDirection>,
     move_repeat_count: u32,
@@ -111,6 +112,7 @@ impl App {
             compositor,
             monitor_config_path,
             needs_save: false,
+            pending_toggle_warning: false,
             last_move_time: Instant::now(),
             last_move_direction: None,
             move_repeat_count: 0,
@@ -296,13 +298,37 @@ impl App {
     }
 
     pub fn toggle_monitor(&mut self) {
+        if self.pending_toggle_warning {
+            self.pending_toggle_warning = false;
+            if let Some(monitor) = self.selected_monitor() {
+                let _ = self.controller.send(WlMonitorAction::Toggle {
+                    name: monitor.name.clone(),
+                    mode: None,
+                });
+                self.needs_save = true;
+            }
+            return;
+        }
+
         if let Some(monitor) = self.selected_monitor() {
+            if monitor.enabled && self.enabled_count() == 1 {
+                self.pending_toggle_warning = true;
+                return;
+            }
             let _ = self.controller.send(WlMonitorAction::Toggle {
                 name: monitor.name.clone(),
                 mode: None,
             });
             self.needs_save = true;
         }
+    }
+
+    pub fn dismiss_warning(&mut self) {
+        self.pending_toggle_warning = false;
+    }
+
+    fn enabled_count(&self) -> usize {
+        self.monitors.iter().filter(|m| m.enabled).count()
     }
 
     pub fn scale_up(&mut self) {
