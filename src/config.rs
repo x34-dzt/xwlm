@@ -13,7 +13,7 @@ pub fn config_path() -> Result<PathBuf> {
     let base = dirs::config_dir().ok_or_else(|| {
         color_eyre::eyre::eyre!("Could not determine config directory")
     })?;
-    Ok(base.join("wlx_monitor_tui").join("config.toml"))
+    Ok(base.join("xwlm").join("config.toml"))
 }
 
 pub fn load() -> Result<Option<AppConfig>> {

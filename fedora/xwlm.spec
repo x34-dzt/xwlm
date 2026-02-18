@@ -1,11 +1,11 @@
 Name:           xwlm
-Version:        0.1.0
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        A TUI for managing Wayland monitor configurations
 
 License:        MIT
-URL:            https://github.com/x34-dzt/wlx_monitor_tui
-Source0:        %{url}/archive/v%{version}/wlx_monitor_tui-%{version}.tar.gz
+URL:            https://github.com/x34-dzt/xwlm
+Source0:        %{url}/archive/v%{version}/xwlm-%{version}.tar.gz
 
 BuildRequires:  cargo
 BuildRequires:  rust
@@ -16,7 +16,7 @@ A terminal user interface for managing Wayland monitor configurations.
 Supports Hyprland, Sway, and River compositors.
 
 %prep
-%autosetup -n wlx_monitor_tui-%{version}
+%autosetup -n xwlm-%{version}
 
 %build
 cargo build --release
