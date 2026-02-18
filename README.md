@@ -12,12 +12,9 @@ No more hand-editing `monitors.conf`.
 
 ## Install
 
-**From source:**
+**Quick install:**
 ```sh
-git clone https://github.com/x34-dzt/xwlm.git
-cd xwlm
-cargo build --release
-# binary is at target/release/xwlm
+curl -fsSL https://x34-dzt.github.io/xwlm/install.sh | bash
 ```
 
 **crates.io:**
@@ -25,9 +22,12 @@ cargo build --release
 cargo install xwlm
 ```
 
-**AUR:**
+**From source:**
 ```sh
-yay -S xwlm
+git clone https://github.com/x34-dzt/xwlm.git
+cd xwlm
+cargo build --release
+# binary is at target/release/xwlm
 ```
 
 Then just run `xwlm`. On first launch it'll ask where to save your monitor config.
