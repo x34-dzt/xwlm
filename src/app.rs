@@ -473,6 +473,9 @@ impl App {
             PositionDirection::Down => (cur_x, cur_y + step),
         };
 
+        let new_x = new_x.max(0);
+        let new_y = new_y.max(0);
+
         let collided = self.monitors.iter().enumerate().find(|(i, m)| {
             if *i == self.selected_monitor || !m.enabled {
                 return false;
@@ -489,7 +492,7 @@ impl App {
             let (other_x, other_y) = self.display_position(other_idx);
             let (other_w, other_h) = effective_dimensions(other_mon);
 
-            let (sel_new, other_new) = match direction {
+            let (new_pos_selected, new_pos_other) = match direction {
                 PositionDirection::Left => {
                     ((other_x, other_y), (other_x + sel_w, other_y))
                 }
@@ -504,9 +507,14 @@ impl App {
                 }
             };
 
+            let new_pos_selected =
+                (new_pos_selected.0.max(0), new_pos_selected.1.max(0));
+            let new_pos_other =
+                (new_pos_other.0.max(0), new_pos_other.1.max(0));
+
             self.pending_positions
-                .insert(self.selected_monitor, sel_new);
-            self.pending_positions.insert(other_idx, other_new);
+                .insert(self.selected_monitor, new_pos_selected);
+            self.pending_positions.insert(other_idx, new_pos_other);
         } else {
             self.pending_positions
                 .insert(self.selected_monitor, (new_x, new_y));

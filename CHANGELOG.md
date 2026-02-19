@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-02-19
+
+### Added
+- Prevent monitor positions from going negative when moving or during collision resolution
+
+### Changed
+- Renamed `rects` to `monitor_rects` for clarity in layout rendering
+- Renamed collision variables `sel_new`/`other_new` to `new_pos_selected`/`new_pos_other`
+- Improved error handling by replacing `unwrap()` with `unwrap_or(0)` in bounding box calculations
+
+### Fixed
+- Fixed misleading error message when terminal panel is too small (was "No monitors", now "Panel too small")
+
 ## [0.1.6] - 2026-02-19
 
 ### Added

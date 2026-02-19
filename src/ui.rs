@@ -147,58 +147,39 @@ fn render_warning_modal(frame: &mut Frame, area: Rect, config_path: &str) {
         .split(inner);
 
     let text = vec![
-        Line::from(vec![
-            Span::styled(
-                " ⚠ Disable your last monitor?",
-                Style::default()
-                    .fg(Color::Red)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled(
-                " No way to undo from here.",
-                Style::default().fg(Color::Yellow),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            " ⚠ Disable your last monitor?",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(vec![Span::styled(
+            " No way to undo from here.",
+            Style::default().fg(Color::Yellow),
+        )]),
         Line::from(""),
-        Line::from(vec![
-            Span::styled(
-                " To recover, you'll need to:",
-                Style::default().fg(Color::White),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled(
-                " 1. Reboot your machine",
-                Style::default().fg(Color::DarkGray),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled(
-                " 2. Open a TTY session",
-                Style::default().fg(Color::DarkGray),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            " To recover, you'll need to:",
+            Style::default().fg(Color::White),
+        )]),
+        Line::from(vec![Span::styled(
+            " 1. Reboot your machine",
+            Style::default().fg(Color::DarkGray),
+        )]),
+        Line::from(vec![Span::styled(
+            " 2. Open a TTY session",
+            Style::default().fg(Color::DarkGray),
+        )]),
         Line::from(vec![
             Span::styled(" 3. Edit ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                config_path,
-                Style::default().fg(Color::Cyan),
-            ),
+            Span::styled(config_path, Style::default().fg(Color::Cyan)),
         ]),
-        Line::from(vec![
-            Span::styled(
-                "    and remove the disable line",
-                Style::default().fg(Color::DarkGray),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled(
-                " 4. Reboot and log into your compositor",
-                Style::default().fg(Color::DarkGray),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            "    and remove the disable line",
+            Style::default().fg(Color::DarkGray),
+        )]),
+        Line::from(vec![Span::styled(
+            " 4. Reboot and log into your compositor",
+            Style::default().fg(Color::DarkGray),
+        )]),
     ];
 
     let buttons = vec![
@@ -208,11 +189,19 @@ fn render_warning_modal(frame: &mut Frame, area: Rect, config_path: &str) {
         ]),
         Line::from(vec![
             Span::styled(" │ ", Style::default().fg(Color::Red)),
-            Span::styled("[Y]", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "[Y]",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
             Span::styled("es ", Style::default().fg(Color::Red)),
             Span::styled("│ ", Style::default().fg(Color::Red)),
             Span::styled("│ ", Style::default().fg(Color::Green)),
-            Span::styled("[N]", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "[N]",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled("o ", Style::default().fg(Color::Green)),
             Span::styled("│", Style::default().fg(Color::Green)),
         ]),
@@ -236,10 +225,7 @@ fn render_left_panel(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let bottom = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
-        ])
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(left[1]);
 
     render_scale(frame, app, bottom[0]);
@@ -261,10 +247,8 @@ fn render_modes(frame: &mut Frame, app: &mut App, area: Rect) {
             m.modes
                 .iter()
                 .map(|mode| {
-                    let marker =
-                        if mode.is_current { "▸ " } else { "  " };
-                    let preferred =
-                        if mode.preferred { " ★" } else { "" };
+                    let marker = if mode.is_current { "▸ " } else { "  " };
+                    let preferred = if mode.preferred { " ★" } else { "" };
                     let style = if mode.is_current {
                         Style::default().fg(Color::Cyan)
                     } else {
@@ -356,10 +340,7 @@ fn render_workspaces(frame: &mut Frame, app: &mut App, area: Rect) {
                     format!("  WS {} ", ws.id),
                     Style::default().fg(Color::White),
                 ),
-                Span::styled(
-                    "\u{2192} ",
-                    Style::default().fg(Color::DarkGray),
-                ),
+                Span::styled("\u{2192} ", Style::default().fg(Color::DarkGray)),
                 Span::styled(monitor_name, name_style),
             ])
             .into()
@@ -438,11 +419,7 @@ fn render_map(frame: &mut Frame, app: &App, area: Rect) {
     let grid_height = inner.height.saturating_sub(1) as usize;
     let grid_width = inner.width as usize;
 
-    let mut lines = build_layout_map(
-        app,
-        grid_width,
-        grid_height,
-    );
+    let mut lines = build_layout_map(app, grid_width, grid_height);
 
     while lines.len() < grid_height {
         lines.push(Line::from(""));
@@ -459,10 +436,7 @@ fn render_map(frame: &mut Frame, app: &App, area: Rect) {
                 Color::DarkGray
             };
             let mut spans = vec![
-                Span::styled(
-                    "  ○ ",
-                    Style::default().fg(Color::Green),
-                ),
+                Span::styled("  ○ ", Style::default().fg(Color::Green)),
                 Span::styled(
                     format!("{}  ", monitor.name),
                     Style::default()
@@ -497,10 +471,7 @@ fn render_map(frame: &mut Frame, app: &App, area: Rect) {
             lines.push(Line::from(spans));
         } else {
             lines.push(Line::from(vec![
-                Span::styled(
-                    "  ○ ",
-                    Style::default().fg(Color::Red),
-                ),
+                Span::styled("  ○ ", Style::default().fg(Color::Red)),
                 Span::styled(
                     format!("{}  ", monitor.name),
                     Style::default()
@@ -539,8 +510,11 @@ fn build_layout_map<'a>(
     let selected_idx = app.selected_monitor;
     let zoom = app.map_zoom;
 
-    if monitors.is_empty() || width < 5 || height < 3 {
+    if monitors.is_empty() {
         return vec![Line::from("  No monitors")];
+    }
+    if width < 5 || height < 3 {
+        return vec![Line::from("  Panel too small")];
     }
 
     struct MonRect {
@@ -555,7 +529,7 @@ fn build_layout_map<'a>(
         pos_label: String,
     }
 
-    let mut rects: Vec<MonRect> = Vec::new();
+    let mut monitor_rects: Vec<MonRect> = Vec::new();
     for (idx, m) in monitors.iter().enumerate() {
         if !m.enabled {
             continue;
@@ -563,7 +537,7 @@ fn build_layout_map<'a>(
         let (w, h) = effective_dimensions(m);
         let (rw, rh) = monitor_resolution(m);
         let (px, py) = app.display_position(idx);
-        rects.push(MonRect {
+        monitor_rects.push(MonRect {
             name: m.name.clone(),
             px,
             py,
@@ -576,17 +550,13 @@ fn build_layout_map<'a>(
         });
     }
 
-    let bottom_y = if rects.is_empty() {
+    let bottom_y = if monitor_rects.is_empty() {
         0
     } else {
-        rects.iter().map(|r| r.py + r.ph).max().unwrap_or(0)
+        monitor_rects.iter().map(|r| r.py + r.ph).max().unwrap_or(0)
     };
     let disabled_y = bottom_y + 200;
-    let mut disabled_x = rects
-        .iter()
-        .map(|r| r.px)
-        .min()
-        .unwrap_or(0);
+    let mut disabled_x = monitor_rects.iter().map(|r| r.px).min().unwrap_or(0);
 
     for (idx, m) in monitors.iter().enumerate() {
         if m.enabled {
@@ -596,7 +566,7 @@ fn build_layout_map<'a>(
         let (rw, rh) = monitor_resolution(m);
         let pw = w.max(1);
         let ph = h.max(1);
-        rects.push(MonRect {
+        monitor_rects.push(MonRect {
             name: m.name.clone(),
             px: disabled_x,
             py: disabled_y,
@@ -610,10 +580,10 @@ fn build_layout_map<'a>(
         disabled_x += pw + 100;
     }
 
-    let min_x = rects.iter().map(|r| r.px).min().unwrap();
-    let min_y = rects.iter().map(|r| r.py).min().unwrap();
-    let max_x = rects.iter().map(|r| r.px + r.pw).max().unwrap();
-    let max_y = rects.iter().map(|r| r.py + r.ph).max().unwrap();
+    let min_x = monitor_rects.iter().map(|r| r.px).min().unwrap_or(0);
+    let min_y = monitor_rects.iter().map(|r| r.py).min().unwrap_or(0);
+    let max_x = monitor_rects.iter().map(|r| r.px + r.pw).max().unwrap_or(0);
+    let max_y = monitor_rects.iter().map(|r| r.py + r.ph).max().unwrap_or(0);
 
     let total_w = (max_x - min_x) as f64;
     let total_h = (max_y - min_y) as f64;
@@ -639,14 +609,12 @@ fn build_layout_map<'a>(
     let mut grid: Vec<Vec<(char, Color, bool)>> =
         vec![vec![(' ', Color::Reset, false); width]; height];
 
-    for rect in &rects {
+    for rect in &monitor_rects {
         let cx = pad + ((rect.px - min_x) as f64 / ppc) as usize;
-        let cy = ((rect.py - min_y) as f64 / (ppc * CHAR_ASPECT))
-            as usize;
+        let cy = ((rect.py - min_y) as f64 / (ppc * CHAR_ASPECT)) as usize;
         let cw = (rect.pw as f64 / ppc).round().max(1.0) as usize;
-        let ch = (rect.ph as f64 / (ppc * CHAR_ASPECT))
-            .round()
-            .max(1.0) as usize;
+        let ch =
+            (rect.ph as f64 / (ppc * CHAR_ASPECT)).round().max(1.0) as usize;
 
         let x1 = cx.min(width.saturating_sub(1));
         let y1 = cy.min(height.saturating_sub(1));
@@ -730,21 +698,16 @@ fn build_layout_map<'a>(
                 (&rect.pos_label, false),
             ];
             let count = text_lines.len().min(inner_h);
-            let start_y =
-                y1 + 1 + inner_h.saturating_sub(count) / 2;
+            let start_y = y1 + 1 + inner_h.saturating_sub(count) / 2;
 
-            for (i, (text, bold)) in
-                text_lines.iter().take(count).enumerate()
-            {
+            for (i, (text, bold)) in text_lines.iter().take(count).enumerate() {
                 let row = start_y + i;
                 if row >= y2 - 1 {
                     break;
                 }
-                let truncated: String =
-                    text.chars().take(inner_w).collect();
-                let text_start = x1
-                    + 1
-                    + inner_w.saturating_sub(truncated.len()) / 2;
+                let truncated: String = text.chars().take(inner_w).collect();
+                let text_start =
+                    x1 + 1 + inner_w.saturating_sub(truncated.len()) / 2;
                 for (j, ch) in truncated.chars().enumerate() {
                     let col = text_start + j;
                     if col < x2 - 1 {
@@ -765,10 +728,7 @@ fn build_layout_map<'a>(
             let mut run = String::new();
             run.push(ch);
             let mut j = i + 1;
-            while j < width
-                && row[j].1 == color
-                && row[j].2 == bold
-            {
+            while j < width && row[j].1 == color && row[j].2 == bold {
                 run.push(row[j].0);
                 j += 1;
             }
@@ -785,13 +745,7 @@ fn build_layout_map<'a>(
     lines
 }
 
-
-
-fn render_scale(
-    frame: &mut Frame,
-    app: &App,
-    area: Rect,
-) {
+fn render_scale(frame: &mut Frame, app: &App, area: Rect) {
     let focused = app.panel == Panel::Scale;
     let border_color = if focused {
         Color::Blue
@@ -813,26 +767,19 @@ fn render_scale(
     let filled_part = "━".repeat(fill.saturating_sub(1));
     let empty_part = "─".repeat(empty);
 
-    let pending_color =
-        if changed { Color::Yellow } else { Color::White };
+    let pending_color = if changed { Color::Yellow } else { Color::White };
 
     let lines = vec![
         Line::from(""),
         Line::from(vec![
-            Span::styled(
-                "  current ",
-                Style::default().fg(Color::DarkGray),
-            ),
+            Span::styled("  current ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 format!("{:.2}x", current),
                 Style::default().fg(Color::White),
             ),
         ]),
         Line::from(vec![
-            Span::styled(
-                "  pending ",
-                Style::default().fg(Color::DarkGray),
-            ),
+            Span::styled("  pending ", Style::default().fg(Color::DarkGray)),
             Span::styled(
                 format!("{:.2}x", pending),
                 Style::default().fg(pending_color),
@@ -845,10 +792,7 @@ fn render_scale(
                 Style::default().fg(Color::Cyan),
             ),
             Span::styled("●", Style::default().fg(Color::White)),
-            Span::styled(
-                empty_part,
-                Style::default().fg(Color::DarkGray),
-            ),
+            Span::styled(empty_part, Style::default().fg(Color::DarkGray)),
         ]),
         Line::from(""),
         if changed {
@@ -888,11 +832,7 @@ fn render_scale(
     frame.render_widget(Paragraph::new(lines).block(block), area);
 }
 
-fn render_transform(
-    frame: &mut Frame,
-    app: &mut App,
-    area: Rect,
-) {
+fn render_transform(frame: &mut Frame, app: &mut App, area: Rect) {
     let focused = app.panel == Panel::Transform;
     let border_color = if focused {
         Color::Blue
@@ -917,14 +857,8 @@ fn render_transform(
             };
 
             Line::from(vec![
-                Span::styled(
-                    format!("  {}", transform_label(t)),
-                    style,
-                ),
-                Span::styled(
-                    marker,
-                    Style::default().fg(Color::Green),
-                ),
+                Span::styled(format!("  {}", transform_label(t)), style),
+                Span::styled(marker, Style::default().fg(Color::Green)),
             ])
             .into()
         })
@@ -963,11 +897,7 @@ fn render_transform(
     frame.render_stateful_widget(list, area, &mut app.transform_state);
 }
 
-fn render_keybindings(
-    frame: &mut Frame,
-    area: Rect,
-    compositor: Compositor,
-) {
+fn render_keybindings(frame: &mut Frame, area: Rect, compositor: Compositor) {
     let keys = Line::from(vec![
         Span::styled(
             " xwlm ",
