@@ -5,7 +5,7 @@ use std::time::Instant;
 use ratatui::widgets::ListState;
 use wlx_monitors::{WlMonitor, WlMonitorAction, WlTransform};
 
-use crate::compositor::Compositor;
+use xwlm_cfg::Compositor;
 
 pub const TRANSFORMS: [WlTransform; 8] = [
     WlTransform::Normal,
@@ -110,7 +110,7 @@ impl App {
         workspace_count: usize,
     ) -> Self {
         let initial_workspace_names =
-            Some(crate::compositor::parse_workspace_config(
+            Some(xwlm_cfg::workspace::parse_workspace_config(
                 compositor,
                 &monitor_config_path,
             ));
@@ -161,7 +161,7 @@ impl App {
                 (ws.id, name)
             })
             .collect();
-        if let Err(e) = crate::compositor::save_monitor_config(
+        if let Err(e) = xwlm_cfg::format::save_monitor_config(
             self.compositor,
             &self.monitor_config_path,
             &self.monitors,
@@ -169,7 +169,7 @@ impl App {
         ) {
             eprintln!("Failed to save monitor config: {e}");
         } else {
-            crate::compositor::reload(self.compositor);
+            xwlm_cfg::format::reload(self.compositor);
         }
     }
 
@@ -443,7 +443,6 @@ impl App {
             return;
         }
 
-        // Acceleration: if same direction pressed within the repeat window, speed up
         let now = Instant::now();
         let elapsed = now.duration_since(self.last_move_time).as_millis();
         let same_direction = self
@@ -474,7 +473,6 @@ impl App {
             PositionDirection::Down => (cur_x, cur_y + step),
         };
 
-        // AABB collision check at the new position
         let collided = self.monitors.iter().enumerate().find(|(i, m)| {
             if *i == self.selected_monitor || !m.enabled {
                 return false;
@@ -488,7 +486,6 @@ impl App {
         });
 
         if let Some((other_idx, other_mon)) = collided {
-            // Swap: place edge-to-edge based on direction
             let (other_x, other_y) = self.display_position(other_idx);
             let (other_w, other_h) = effective_dimensions(other_mon);
 
@@ -516,7 +513,6 @@ impl App {
         }
     }
 
-    /// Get the display position for a monitor (pending if moved, otherwise actual).
     pub fn display_position(&self, idx: usize) -> (i32, i32) {
         if let Some(&pos) = self.pending_positions.get(&idx) {
             return pos;

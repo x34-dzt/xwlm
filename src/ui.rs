@@ -17,7 +17,7 @@ use crate::app::{
     App, Panel, TRANSFORMS, effective_dimensions, monitor_resolution,
     transform_label,
 };
-use crate::compositor::Compositor;
+use xwlm_cfg::Compositor;
 
 pub fn run(
     mut terminal: DefaultTerminal,
@@ -98,13 +98,11 @@ pub fn run(
 fn render(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
-    // Main: content + keybindings bar
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(1), Constraint::Length(1)])
         .split(area);
 
-    // Content: left area + Modes + Workspaces
     let content = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -229,7 +227,6 @@ fn render_warning_modal(frame: &mut Frame, area: Rect, config_path: &str) {
 }
 
 fn render_left_panel(frame: &mut Frame, app: &mut App, area: Rect) {
-    // Left: map (top) + bottom (scale + transform)
     let left = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(8), Constraint::Length(10)])
@@ -447,12 +444,10 @@ fn render_map(frame: &mut Frame, app: &App, area: Rect) {
         grid_height,
     );
 
-    // Pad to fill grid area
     while lines.len() < grid_height {
         lines.push(Line::from(""));
     }
 
-    // Monitor status line
     if let Some(monitor) = app.selected_monitor() {
         let (ew, eh) = effective_dimensions(monitor);
         if monitor.enabled {
@@ -548,7 +543,6 @@ fn build_layout_map<'a>(
         return vec![Line::from("  No monitors")];
     }
 
-    // Gather pixel-space rectangles for ALL monitors (enabled + disabled)
     struct MonRect {
         name: String,
         px: i32,
@@ -561,7 +555,6 @@ fn build_layout_map<'a>(
         pos_label: String,
     }
 
-    // Build rects for enabled monitors first (using display_position for pending moves)
     let mut rects: Vec<MonRect> = Vec::new();
     for (idx, m) in monitors.iter().enumerate() {
         if !m.enabled {
@@ -583,13 +576,11 @@ fn build_layout_map<'a>(
         });
     }
 
-    // Place disabled monitors below the enabled ones
     let bottom_y = if rects.is_empty() {
         0
     } else {
         rects.iter().map(|r| r.py + r.ph).max().unwrap_or(0)
     };
-    // Add a gap below
     let disabled_y = bottom_y + 200;
     let mut disabled_x = rects
         .iter()
@@ -619,7 +610,6 @@ fn build_layout_map<'a>(
         disabled_x += pw + 100;
     }
 
-    // Bounding box
     let min_x = rects.iter().map(|r| r.px).min().unwrap();
     let min_y = rects.iter().map(|r| r.py).min().unwrap();
     let max_x = rects.iter().map(|r| r.px + r.pw).max().unwrap();
@@ -632,15 +622,12 @@ fn build_layout_map<'a>(
         return vec![];
     }
 
-    // Terminal chars are ~2x taller than wide
     const CHAR_ASPECT: f64 = 2.0;
 
     let pad = 2_usize;
     let avail_w = width.saturating_sub(pad * 2) as f64;
     let avail_h = height.saturating_sub(1) as f64;
 
-    // Pixels per char column (use max so everything fits)
-    // Use 80% of available space so monitors don't fill the entire panel
     let ppc_x = total_w / (avail_w * 0.8);
     let ppc_y = total_h / (avail_h * CHAR_ASPECT * 0.8);
     let ppc = ppc_x.max(ppc_y) / zoom;
@@ -649,11 +636,9 @@ fn build_layout_map<'a>(
         return vec![];
     }
 
-    // Character grid: (char, fg_color, bold)
     let mut grid: Vec<Vec<(char, Color, bool)>> =
         vec![vec![(' ', Color::Reset, false); width]; height];
 
-    // Compute char-space rectangles and draw
     for rect in &rects {
         let cx = pad + ((rect.px - min_x) as f64 / ppc) as usize;
         let cy = ((rect.py - min_y) as f64 / (ppc * CHAR_ASPECT))
@@ -663,7 +648,6 @@ fn build_layout_map<'a>(
             .round()
             .max(1.0) as usize;
 
-        // Clamp to grid bounds
         let x1 = cx.min(width.saturating_sub(1));
         let y1 = cy.min(height.saturating_sub(1));
         let x2 = (cx + cw).min(width);
@@ -672,7 +656,6 @@ fn build_layout_map<'a>(
         let h = y2.saturating_sub(y1);
 
         if w < 2 || h < 2 {
-            // Too small for a box, just mark a single cell
             if y1 < height && x1 < width {
                 let ch = rect.name.chars().next().unwrap_or('?');
                 let fg = if rect.is_selected {
@@ -706,8 +689,6 @@ fn build_layout_map<'a>(
             Color::Rgb(80, 80, 80)
         };
 
-        // Box-drawing characters: selected+enabled=double, selected+disabled=double dim,
-        // enabled=single, disabled=dashed
         let (tl, tr, bl, br, hc, vc) = if rect.is_selected {
             ('╔', '╗', '╚', '╝', '═', '║')
         } else if rect.is_enabled {
@@ -716,13 +697,11 @@ fn build_layout_map<'a>(
             ('┌', '┐', '└', '┘', '╌', '╎')
         };
 
-        // Corners
         grid[y1][x1] = (tl, border_fg, false);
         grid[y1][x2 - 1] = (tr, border_fg, false);
         grid[y2 - 1][x1] = (bl, border_fg, false);
         grid[y2 - 1][x2 - 1] = (br, border_fg, false);
 
-        // Horizontal edges
         for cell in grid[y1][(x1 + 1)..(x2 - 1)].iter_mut() {
             *cell = (hc, border_fg, false);
         }
@@ -730,20 +709,17 @@ fn build_layout_map<'a>(
             *cell = (hc, border_fg, false);
         }
 
-        // Vertical edges
         for row in grid[(y1 + 1)..(y2 - 1)].iter_mut() {
             row[x1] = (vc, border_fg, false);
             row[x2 - 1] = (vc, border_fg, false);
         }
 
-        // Fill interior
         for row in grid[(y1 + 1)..(y2 - 1)].iter_mut() {
             for cell in row[(x1 + 1)..(x2 - 1)].iter_mut() {
                 *cell = (' ', text_fg, false);
             }
         }
 
-        // Place text inside the rectangle
         let inner_w = w.saturating_sub(2);
         let inner_h = h.saturating_sub(2);
 
@@ -780,7 +756,6 @@ fn build_layout_map<'a>(
         }
     }
 
-    // Convert grid to Lines
     let mut lines = Vec::new();
     for row in &grid {
         let mut spans = Vec::new();

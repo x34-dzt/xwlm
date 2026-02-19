@@ -2137,6 +2137,14 @@ dependencies = [
  "serde",
  "toml",
  "wlx_monitors",
+ "xwlm-cfg",
+]
+
+[[package]]
+name = "xwlm-cfg"
+version = "0.1.0"
+dependencies = [
+ "wlx_monitors",
 ]
 
 [[package]]

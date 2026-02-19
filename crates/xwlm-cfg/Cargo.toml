@@ -1,0 +1,7 @@
+[package]
+name = "xwlm-cfg"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wlx_monitors = "0.1"
