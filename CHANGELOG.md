@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-02-19
+## [0.1.7] - 2026-02-19
 
 ### Added
 - Prevent monitor positions from going negative when moving or during collision resolution
