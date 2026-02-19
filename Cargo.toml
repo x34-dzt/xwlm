@@ -4,7 +4,7 @@ resolver = "2"
 
 [package]
 name = "xwlm"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 description = "A TUI for managing Wayland monitor configurations (Hyprland, Sway, River)"
 license = "MIT"

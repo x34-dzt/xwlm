@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-02-19
+
+### Added
+- Auto-detect existing monitor config on first-time setup instead of requiring manual path entry
+- Recursive config extraction: walks compositor config trees following source/include directives to find monitor and workspace definitions
+- Workspace line extraction alongside monitor lines for Hyprland and Sway
+- Manual fallback (`m` key) in setup wizard when auto-detection is not available
+
+### Changed
+- Renamed `xwlm-compositor` crate to `xwlm-cfg`
+- Replaced `unwrap()` with proper error handling in config extractors
+
 ## [0.1.4] - 2026-02-18
 
 ### Added
