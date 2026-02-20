@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.10] - 2026-02-20
+
+### Fixed
+
+- Changed scale increment from 0.1 to 0.01 for finer granularity
+
 ## [0.1.9] - 2026-02-20
 
 ### Added
