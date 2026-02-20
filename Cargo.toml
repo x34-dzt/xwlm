@@ -13,7 +13,7 @@ keywords = ["wayland", "monitor", "tui", "hyprland", "sway"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-xwlm-cfg = { path = "crates/xwlm-cfg", version = "0.1.0" }
+xwlm-cfg = { path = "crates/xwlm-cfg", version = "0.1.1" }
 color-eyre = "0.6.5"
 ratatui = "0.30.0"
 crossterm = "0.29"

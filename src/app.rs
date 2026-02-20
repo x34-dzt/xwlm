@@ -564,11 +564,11 @@ impl App {
     }
 
     pub fn scale_up(&mut self) {
-        self.pending_scale = (self.pending_scale + 0.1).min(10.0);
+        self.pending_scale = (self.pending_scale + 0.01).min(10.0);
     }
 
     pub fn scale_down(&mut self) {
-        self.pending_scale = (self.pending_scale - 0.1).max(0.5);
+        self.pending_scale = (self.pending_scale - 0.01).max(0.5);
     }
 
     pub fn zoom_in(&mut self) {
