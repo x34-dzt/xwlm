@@ -2142,7 +2142,7 @@ dependencies = [
 
 [[package]]
 name = "xwlm-cfg"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "wlx_monitors",
 ]
