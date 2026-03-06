@@ -13,3 +13,15 @@ pub enum Pane {
     Transform,
     Worksapce,
 }
+
+impl Pane {
+    pub fn next(&self) -> Pane {
+        match self {
+            Pane::Map => Pane::Mode,
+            Pane::Mode => Pane::Worksapce,
+            Pane::Worksapce => Pane::Scale,
+            Pane::Scale => Pane::Transform,
+            Pane::Transform => Pane::Map,
+        }
+    }
+}

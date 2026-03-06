@@ -67,9 +67,13 @@ impl App {
     pub fn handle_key_events(&mut self, k: KeyEvent) {
         match k.code {
             KeyCode::Char('q') => self.exit = true,
-            KeyCode::Tab => {}
+            KeyCode::Tab => self.cycle_pane(),
             _ => {}
         }
+    }
+
+    pub fn cycle_pane(&mut self) {
+        self.active_pane = self.active_pane.next();
     }
 
     pub fn handle_events(&mut self) -> io::Result<()> {
