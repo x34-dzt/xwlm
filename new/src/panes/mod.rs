@@ -4,7 +4,7 @@ pub mod scale;
 pub mod transform;
 pub mod workspace;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum Pane {
     #[default]
     Map,
