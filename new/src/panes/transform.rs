@@ -8,16 +8,16 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Transform {
     active: bool,
 }
 
-impl Default for Transform {
-    fn default() -> Self {
-        Self { active: false }
-    }
-}
+// impl Default for Transform {
+//     fn default() -> Self {
+//         Self { active: false }
+//     }
+// }
 
 impl Transform {
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, is_active: bool) {

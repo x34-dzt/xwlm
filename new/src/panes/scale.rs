@@ -8,16 +8,16 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Scale {
     active: bool,
 }
 
-impl Default for Scale {
-    fn default() -> Self {
-        Self { active: false }
-    }
-}
+// impl Default for Scale {
+//     fn default() -> Self {
+//         Self { active: false }
+//     }
+// }
 
 impl Scale {
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, is_active: bool) {

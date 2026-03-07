@@ -8,16 +8,16 @@ use ratatui::{
     widgets::{Block, Widget},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Workspace {
     active: bool,
 }
 
-impl Default for Workspace {
-    fn default() -> Self {
-        Self { active: false }
-    }
-}
+// impl Default for Workspace {
+//     fn default() -> Self {
+//         Self { active: false }
+//     }
+// }
 
 impl Workspace {
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, is_active: bool) {
