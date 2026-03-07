@@ -30,7 +30,7 @@ impl MonitorMap {
         self.state = state;
     }
 
-    pub fn binds(&mut self, k: KeyEvent) {
+    pub fn binds(&mut self, k: KeyEvent) -> Option<usize> {
         match k.code {
             KeyCode::Down => {
                 let i = match self.state.selected() {
@@ -38,6 +38,7 @@ impl MonitorMap {
                     None => 0,
                 };
                 self.state.select(Some(i));
+                Some(i)
             }
             KeyCode::Up => {
                 let i = match self.state.selected() {
@@ -45,9 +46,10 @@ impl MonitorMap {
                     None => 0,
                 };
                 self.state.select(Some(i));
+                Some(i)
             }
-            _ => {}
-        };
+            _ => None,
+        }
     }
 }
 

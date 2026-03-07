@@ -4,7 +4,7 @@ use crate::panes::{
     Pane, modes::Modes, monitor_map::MonitorMap, scale::Scale, transform::Transform,
     workspace::Workspace,
 };
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Direction, Layout},
@@ -25,7 +25,7 @@ pub struct App {
     exit: bool,
 }
 
-enum AppEvent {
+pub enum AppEvent {
     Key(KeyEvent),
     Monitor(WlMonitorEvent),
 }
@@ -120,7 +120,16 @@ impl App {
             KeyCode::Char('q') => self.exit = true,
             KeyCode::Tab => self.cycle_pane(),
             _ => match self.active_pane {
-                Pane::Map => self.monitor_map.binds(k),
+                Pane::Map => {
+                    match self.monitor_map.binds(k) {
+                        Some(selected) => {
+                            self.selected_monitor = selected;
+                            self.sync_state();
+                        }
+                        None => self.selected_monitor = 0,
+                    };
+                }
+                Pane::Mode => self.modes.binds(k),
                 _ => {}
             },
         };
@@ -130,28 +139,35 @@ impl App {
         self.active_pane = self.active_pane.next();
     }
 
-    pub fn handle_events(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_events(key_event)
-            }
-            _ => {}
-        };
-
-        Ok(())
-    }
-
     pub fn handle_wlx_events(&mut self, event: WlMonitorEvent) {
         match event {
             WlMonitorEvent::InitialState(monitors) => {
                 self.add_monitors(monitors);
             }
+            WlMonitorEvent::Changed(monitor) => {
+                println!("wow {:?}", monitor)
+            }
             _ => {}
         }
+    }
+
+    pub fn sync_state(&mut self) {
+        let Some(selected_monitor) = self.monitors.get(self.selected_monitor) else {
+            return;
+        };
+
+        self.modes.sync(selected_monitor.modes.clone());
     }
 
     pub fn add_monitors(&mut self, monitors: Vec<WlMonitor>) {
         self.monitor_map.set_montiors(monitors.clone());
         self.monitors = monitors;
+
+        let selected_monitor = match self.monitors.get(self.selected_monitor) {
+            Some(monitor) => monitor,
+            None => &self.monitors[0],
+        };
+
+        self.modes.set_modes(selected_monitor.modes.clone());
     }
 }

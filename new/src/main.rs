@@ -6,7 +6,6 @@ use crate::app::App;
 
 mod app;
 mod panes;
-mod utils;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let (wlx_emitter, wlx_events) = mpsc::sync_channel(16);
